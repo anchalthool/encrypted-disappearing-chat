@@ -111,17 +111,3 @@ Open:
 Login → auto-join → enter passphrase → decrypt messages.
 
 ------------------------------------------------------------------------
-
-## 📌 Resume Highlights
-
--   Built privacy-first group messaging with lifecycle automation\
--   Implemented browser-based end-to-end encryption\
--   Designed secure invite onboarding and role-based access
-
-------------------------------------------------------------------------
-
-## 👨‍💻 Author
-
-Anchal --- Master's in Data Science\
-Portfolio project demonstrating full-stack product ownership and
-encryption design.
