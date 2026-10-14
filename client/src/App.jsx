@@ -12,6 +12,7 @@ function App() {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
 
+  const [showCreate, setShowCreate] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({
     name: "",
@@ -176,6 +177,8 @@ function App() {
       const data = await apiRequest("/groups", "POST", body, token);
       setGroups((prev) => [data.group, ...prev]);
 
+      setShowCreate(false);
+      openGroup(data.group);
       setNewGroup({
         name: "",
         description: "",
@@ -189,6 +192,8 @@ function App() {
 
   const openGroup = (group) => {
     setActiveGroup(group);
+    setInviteLink("");
+    setNewMessage("");
     setMessages([]);
     setPassphrase("");
     setGroupKey(null);
@@ -280,12 +285,30 @@ function App() {
   if (!token) {
     return (
       <div className="auth-page">
+        <section className="auth-story">
+          <div className="brand"><span className="brand-mark">d</span> dissolve<span className="brand-dot">.</span></div>
+          <div className="eyebrow">A LITTLE MORE PRIVATE</div>
+          <h1>Good conversations.<br />Small footprint.</h1>
+          <p>A space for your people, with encrypted group chats that expire on your terms.</p>
+          <div className="conversation-preview" aria-hidden="true">
+            <div className="preview-top"><span className="preview-avatar">W</span><div>Weekend plans<small>Private group · expires in 7 days</small></div><span className="preview-live">●</span></div>
+            <div className="preview-message">Same place, same people? <small>10:42</small></div>
+            <div className="preview-message mine">Wouldn’t miss it. ☀ <small>10:43</small></div>
+            <div className="preview-note">Just between you and your people.</div>
+          </div>
+          <div className="story-tags"><span>Browser-side encryption</span><span>Time-bound groups</span></div>
+        </section>
         <div className="auth-card">
-          <h2>{authMode === "login" ? "Login" : "Register"}</h2>
+          <div className="eyebrow">YOUR PRIVATE SPACE</div>
+          <h2>{authMode === "login" ? "Welcome back." : "Make yourself at home."}</h2>
+          <p className="auth-description">{authMode === "login" ? "Sign in to pick up the conversation." : "Create an account and bring your people together."}</p>
           <form onSubmit={handleAuthSubmit}>
             {authMode === "register" && (
               <input
-                placeholder="Name"
+                aria-label="Your name"
+                autoComplete="name"
+                required
+                placeholder="Your name"
                 value={authForm.name}
                 onChange={(e) =>
                   handleAuthChange("name", e.target.value)
@@ -293,7 +316,10 @@ function App() {
               />
             )}
             <input
-              placeholder="Email"
+              aria-label="Email address"
+              autoComplete="email"
+              required
+              placeholder="Email address"
               type="email"
               value={authForm.email}
               onChange={(e) =>
@@ -301,6 +327,9 @@ function App() {
               }
             />
             <input
+              aria-label="Password"
+              autoComplete={authMode === "login" ? "current-password" : "new-password"}
+              required
               placeholder="Password"
               type="password"
               value={authForm.password}
@@ -309,7 +338,7 @@ function App() {
               }
             />
             <button type="submit">
-              {authMode === "login" ? "Login" : "Register"}
+              {authMode === "login" ? "Sign in →" : "Create account →"}
             </button>
           </form>
           <div className="switch">
@@ -323,6 +352,7 @@ function App() {
               {authMode === "login" ? "Create an account" : "Login"}
             </button>
           </div>
+          <div className="auth-footnote">Your messages are encrypted in your browser.</div>
         </div>
       </div>
     );
@@ -334,7 +364,9 @@ function App() {
       <div className="app-body">
         {/* Sidebar */}
         <div className="sidebar">
+          <div className="brand sidebar-brand"><span className="brand-mark">d</span> dissolve<span className="brand-dot">.</span></div>
           <div className="sidebar-header">
+            <span className="user-avatar">{user?.name?.slice(0, 1).toUpperCase()}</span>
             <div className="sidebar-header-user">
               <span>{user?.name}</span>
               <span>{user?.email}</span>
@@ -344,7 +376,8 @@ function App() {
             </div>
           </div>
 
-          <div className="sidebar-create">
+          <div className="sidebar-section-title"><h2>Your conversations <span>{groups.length}</span></h2><button className="new-group-button" onClick={() => setShowCreate(!showCreate)} aria-expanded={showCreate}>{showCreate ? "Close" : "+ New"}</button></div>
+          {showCreate && <div className="sidebar-create">
             <form onSubmit={handleCreateGroup}>
               <input
                 placeholder="New group name"
@@ -393,22 +426,15 @@ function App() {
               )}
               <button type="submit">Create group</button>
             </form>
-          </div>
+          </div>}
 
           <div className="sidebar-list">
             {groups.length === 0 && (
-              <div
-                style={{
-                  color: "#8696a0",
-                  fontSize: "13px",
-                  padding: "16px",
-                }}
-              >
-                No groups yet. Create one above.
-              </div>
+              <div className="list-empty"><span className="empty-small-icon">＋</span><strong>Your people belong here.</strong><p>Create a group to start your first private conversation.</p><button onClick={() => setShowCreate(true)}>Create a group →</button></div>
             )}
             {groups.map((g) => (
-              <div
+              <button
+                type="button"
                 key={g.id}
                 className={
                   "chat-list-item" +
@@ -416,26 +442,31 @@ function App() {
                 }
                 onClick={() => openGroup(g)}
               >
-                <div className="chat-list-title">{g.name}</div>
+                <span className="group-avatar">{g.name.slice(0, 1).toUpperCase()}</span>
+                <div className="group-details"><div className="chat-list-title">{g.name}</div>
                 <div className="chat-list-meta">
-                  {g.description || "No description"} ·{" "}
-                  {g.status} · Exp:{" "}
-                  {new Date(g.expiration_time).toLocaleString()}
-                </div>
-              </div>
+                  {g.description || "A private space for your people"}
+                  <span className="group-expiry">{g.status} · Expires {new Date(g.expiration_time).toLocaleDateString()}</span>
+                </div></div>
+              </button>
             ))}
           </div>
+          <div className="sidebar-footer"><span className="status-dot" /> Encrypted. Ephemeral. Yours.</div>
         </div>
 
         {/* Chat area */}
         <div className="chat">
           {!activeGroup && (
             <div className="chat-empty">
-              <h2>Welcome to Dissolving Groups</h2>
+              <div className="empty-art" aria-hidden="true"><span>◌</span><div className="empty-art-bubble">hello.</div><div className="empty-art-spark">✳</div></div>
+              <div className="eyebrow">ROOM FOR REAL CONVERSATIONS</div>
+              <h2>A little space for your people.</h2>
               <p>
-                Select a group on the left or create a new one to start an
-                end-to-end encrypted chat that disappears after its expiry.
+                Choose a conversation or create a group. Share the moments
+                that matter, then let the space expire.
               </p>
+              <button className="empty-create" onClick={() => setShowCreate(true)}>+ Create your first group</button>
+              <div className="empty-caption">Messages encrypted in your browser · Access ends at expiry</div>
             </div>
           )}
 
@@ -460,19 +491,11 @@ function App() {
     </span>
   </div>
 
-  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+  <div className="chat-header-actions">
     <button
       type="button"
       onClick={handleCreateInvite}
-      style={{
-        background: "transparent",
-        color: "#e9edef",
-        border: "1px solid #2a3942",
-        borderRadius: 4,
-        padding: "6px 10px",
-        fontSize: 12,
-        cursor: "pointer",
-      }}
+      className="invite-button"
     >
       Invite link
     </button>
@@ -483,6 +506,7 @@ function App() {
     >
       <input
         type="password"
+        aria-label="Group passphrase"
         placeholder="Group passphrase"
         value={passphrase}
         onChange={(e) => setPassphrase(e.target.value)}
@@ -497,14 +521,7 @@ function App() {
 
               <div className="chat-body">
                 {messages.length === 0 && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      color: "#8696a0",
-                      fontSize: "13px",
-                      marginTop: "16px",
-                    }}
-                  >
+                  <div className="message-empty" role="status">
                     {groupKey
                       ? "No messages yet. Start the conversation!"
                       : "Enter the group passphrase to decrypt messages."}
@@ -542,6 +559,7 @@ function App() {
 
               <form className="chat-input" onSubmit={handleSendMessage}>
                 <input
+                  aria-label="Message"
                   placeholder={
                     groupKey
                       ? "Type a message"
